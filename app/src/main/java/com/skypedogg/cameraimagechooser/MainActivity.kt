@@ -8,10 +8,13 @@ import android.util.Log
 import android.widget.Toast
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.skypedogg.cameraimagechooser.databinding.ActivityMainBinding
 
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.concurrent.ExecutorService
 
 class MainActivity : AppCompatActivity() {
@@ -31,6 +34,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+
 
         if (hasPermissions()) {
             //startCamera()
@@ -57,9 +62,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun askPermissions() {
-        //ActivityCompat.requestPermissions(
-        //    this, REQUIRED_PERMISSIONS, PERMISSIONS_CODE)
-        //)
+        ActivityCompat.requestPermissions(
+            this, REQUIRED_PERMISSIONS, PERMISSIONS_CODE
+        )
     }
 
     private fun hasPermissions(): Boolean {
@@ -89,8 +94,34 @@ class MainActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
-    private fun takePhoto() {
+    private fun takePhoto(): Pair<File?, String?> {
 
+        val imageCapture = imageCapture ?: return Pair(null, null)
+
+        var photoPath: String? = null
+        val photoFile = File(
+            outputDir,
+            SimpleDateFormat(FILENAME_FORMAT, Locale.getDefault())
+                .format(System.currentTimeMillis()) + ".bmp"
+        )
+
+        val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+
+        imageCapture.takePicture(
+            outputOptions,
+            ContextCompat.getMainExecutor(this),
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    photoPath = outputFileResults.savedUri?.path
+                }
+
+                override fun onError(exception: ImageCaptureException) {
+                    Log.e(callingActivity!!.shortClassName, exception.localizedMessage!!)
+                }
+
+            }
+        )
+        return Pair(photoFile, photoPath)
     }
 
     override fun onRequestPermissionsResult(
