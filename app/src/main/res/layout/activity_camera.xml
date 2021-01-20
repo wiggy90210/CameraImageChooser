@@ -5,31 +5,22 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".CameraActivity">
 
     <Button
         android:id="@+id/camera_capture_button"
         android:layout_width="100dp"
         android:layout_height="100dp"
         app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginStart="50dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:background="@drawable/ic_baseline_camera_alt_24"
-        android:elevation="0dp"
-        android:layout_marginBottom="50dp" />
-
-    <Button
-        android:id="@+id/pick_from_gallery"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginEnd="50dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:background="@drawable/ic_baseline_insert_photo_24"
+        android:background="@drawable/ic_baseline_camera_24"
         android:elevation="0dp"
         android:layout_marginBottom="50dp" />
 
+    <androidx.camera.view.PreviewView
+        android:id="@+id/viewFinder"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

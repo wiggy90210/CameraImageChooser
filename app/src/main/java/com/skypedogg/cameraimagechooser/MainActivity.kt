@@ -1,65 +1,97 @@
 package com.skypedogg.cameraimagechooser
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.skypedogg.cameraimagechooser.databinding.ActivityMainBinding
 
 import java.io.File
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ExecutorService
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var filePath: String
     private lateinit var binding: ActivityMainBinding
-
-    private var preview: Preview? = null
-    private var imageCapture: ImageCapture? = null
-    private var imageAnalyzer: ImageAnalysis? = null
-    private var camera: Camera? = null
-
-    private lateinit var output: File
-    private lateinit var outputDir: File
-    private lateinit var cameraExecutor: ExecutorService
+    private var extras: Bundle? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-
+        binding.pickFromGallery.isEnabled = false
+        binding.cameraCaptureButton.isEnabled = false
 
         if (hasPermissions()) {
-            //startCamera()
+            binding.pickFromGallery.isEnabled = true
+            binding.cameraCaptureButton.isEnabled = true
         } else {
             askPermissions()
         }
 
-        setListeners()
-        outputDir = getOutputDirectory()
-    }
-
-    private fun getOutputDirectory(): File {
-        val directory = externalMediaDirs.firstOrNull()?.let {
-            File(it, resources.getString(R.string.app_name)).apply { mkdirs() }
+        binding.pickFromGallery.setOnClickListener {
+            val i = Intent(this@MainActivity, ImageActivity::class.java)
+            startActivity(i)
         }
-        return when (directory != null && directory.exists()) {
-            true -> directory
-            else -> filesDir
+        binding.cameraCaptureButton.setOnClickListener {
+            startCameraIntent()
         }
     }
 
-    private fun setListeners() {
-        binding.cameraCaptureButton.setOnClickListener { takePhoto() }
+    @Throws(IOException::class)
+    private fun createImageFile(): File {
+        // Create an image file name
+        val timeStamp: String = SimpleDateFormat(FILENAME_FORMAT, Locale.getDefault())
+            .format(System.currentTimeMillis()) + ".bmp"
+        val dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        return File.createTempFile(
+            "Photo_${timeStamp}_",
+            ".jpg",
+            dir
+        ).apply {
+            filePath = absolutePath
+        }
     }
+
+    private fun startCameraIntent() {
+        Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+
+            takePictureIntent.resolveActivity(packageManager)?.also {
+                val photoFile: File? = try {
+                    createImageFile()
+                } catch (ex: IOException) {
+                    ex.printStackTrace()
+                    null
+                }
+                // Continue only if the File was successfully created
+                photoFile?.also {
+                    val photoURI: Uri = FileProvider.getUriForFile(
+                        this,
+                        "com.example.android.fileprovider",
+                        it
+                    )
+                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
+                    startActivityForResult(takePictureIntent, PHOTO_TAKEN_CODE)
+                }
+            }
+        }
+    }
+
 
     private fun askPermissions() {
         ActivityCompat.requestPermissions(
@@ -73,57 +105,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun startCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-        cameraProviderFuture.addListener(Runnable {
-            val cameraProvider = cameraProviderFuture.get()
-            preview = Preview.Builder()
-                .build()
-                .also {
-                    it.setSurfaceProvider(binding.viewFinder.surfaceProvider)
-                }
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-            try {
-                cameraProvider.unbindAll()
-                camera = cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview
-                )
-            } catch (ex: Exception) {
-                Log.e(callingActivity!!.shortClassName, "Use case binding failed", ex)
-            }
-        }, ContextCompat.getMainExecutor(this))
-    }
-
-    private fun takePhoto(): Pair<File?, String?> {
-
-        val imageCapture = imageCapture ?: return Pair(null, null)
-
-        var photoPath: String? = null
-        val photoFile = File(
-            outputDir,
-            SimpleDateFormat(FILENAME_FORMAT, Locale.getDefault())
-                .format(System.currentTimeMillis()) + ".bmp"
-        )
-
-        val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
-
-        imageCapture.takePicture(
-            outputOptions,
-            ContextCompat.getMainExecutor(this),
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    photoPath = outputFileResults.savedUri?.path
-                }
-
-                override fun onError(exception: ImageCaptureException) {
-                    Log.e(callingActivity!!.shortClassName, exception.localizedMessage!!)
-                }
-
-            }
-        )
-        return Pair(photoFile, photoPath)
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -131,16 +112,30 @@ class MainActivity : AppCompatActivity() {
     ) {
         if (requestCode == PERMISSIONS_CODE) {
             if (hasPermissions()) {
-                startCamera()
+                binding.pickFromGallery.isEnabled = true
+                binding.cameraCaptureButton.isEnabled = true
             } else {
                 Toast.makeText(this, "Permissions needed!", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == PHOTO_TAKEN_CODE) {
+            if (resultCode == RESULT_OK) {
+                val imageActivity = Intent(this@MainActivity, ImageActivity::class.java)
+                imageActivity.putExtra("photo", filePath)
+                startActivity(imageActivity)
+            }
+        }
+    }
+
+
     companion object {
-        private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss"
-        private const val PERMISSIONS_CODE = 111
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE)
+        private const val PERMISSIONS_CODE = 111
+        private const val PHOTO_TAKEN_CODE = 112
+        private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss"
     }
 }
