@@ -68,6 +68,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
     private fun startCameraIntent() {
         Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
 
