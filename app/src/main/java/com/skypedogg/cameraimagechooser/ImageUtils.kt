@@ -19,14 +19,10 @@ class ImageUtils {
 
     fun getPathFromUri(uri: Uri?): String? = uri?.path
 
+    fun getBitmapFromPath(absolutePath: String): Bitmap = BitmapFactory.decodeFile(absolutePath)
 
-    fun getBitmapFromPath(absolutePath: String): Bitmap {
-        return BitmapFactory.decodeFile(absolutePath)
-    }
-
-    fun getBitmapFromFile(file: File): Bitmap {
-        return BitmapFactory.decodeFile(file.absolutePath)
-    }
+    fun getBitmapFromFile(file: File): Bitmap = BitmapFactory.decodeFile(file.absolutePath)
+    
 
     fun File.compressImage(size: Int): File {
         val outputStream = ByteArrayOutputStream()
