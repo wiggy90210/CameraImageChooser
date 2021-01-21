@@ -90,7 +90,7 @@ class ImageUtils {
     }
 
 
-    private fun decodeFile(
+    fun decodeFile(
             path: String,
             dstWidth: Int,
             dstHeight: Int,
