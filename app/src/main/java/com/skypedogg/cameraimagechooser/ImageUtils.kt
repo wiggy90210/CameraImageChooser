@@ -16,21 +16,14 @@ class ImageUtils {
     private val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss"
 
     fun getFileFromUri(uri: Uri?): File? {
-        uri?.let {
-            val path: String? = it.path
-            if (path != null) {
-                return File(path)
-            }
-            return null
-        }
-        return null
+        if (uri == null) return null
+        if (uri.path == null) return null
+        return File(uri.path!!)
     }
 
     fun getPathFromUri(uri: Uri?): String? {
-        uri?.let {
-            return it.path
-        }
-        return null
+        if (uri == null) return null
+        return uri.path
     }
 
     fun getBitmapFromPath(absolutePath: String): Bitmap {
