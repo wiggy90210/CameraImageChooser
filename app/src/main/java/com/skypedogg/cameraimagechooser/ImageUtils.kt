@@ -15,13 +15,10 @@ class ImageUtils {
 
     private val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss"
 
-    fun getFileFromUri(uri: Uri?): File? {
-        return uri?.path?.let { File(it) }
-    }
-    
-    fun getPathFromUri(uri: Uri?): String? {
-        return uri?.path
-    }
+    fun getFileFromUri(uri: Uri?): File? = uri?.path?.let { File(it) }
+
+    fun getPathFromUri(uri: Uri?): String? = uri?.path
+
 
     fun getBitmapFromPath(absolutePath: String): Bitmap {
         return BitmapFactory.decodeFile(absolutePath)
