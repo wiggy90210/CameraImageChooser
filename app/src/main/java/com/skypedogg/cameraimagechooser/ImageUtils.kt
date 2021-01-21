@@ -16,14 +16,11 @@ class ImageUtils {
     private val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss"
 
     fun getFileFromUri(uri: Uri?): File? {
-        if (uri == null) return null
-        if (uri.path == null) return null
-        return File(uri.path!!)
+        return uri?.path?.let { File(it) }
     }
-
+    
     fun getPathFromUri(uri: Uri?): String? {
-        if (uri == null) return null
-        return uri.path
+        return uri?.path
     }
 
     fun getBitmapFromPath(absolutePath: String): Bitmap {
@@ -67,7 +64,7 @@ class ImageUtils {
                 }
             val mFolder = File(outputDir)
             if (!mFolder.exists()) {
-                mFolder.mkdir()
+                mFolder.mkdirs()
             }
             val fileName = "Scaled_${SimpleDateFormat(FILENAME_FORMAT, Locale.getDefault()).format(System.currentTimeMillis())}.png"
             val file = File(mFolder.absolutePath, fileName)
@@ -75,7 +72,7 @@ class ImageUtils {
             var fos: FileOutputStream? = null
             try {
                 fos = FileOutputStream(file)
-                scaledBitmap!!.compress(Bitmap.CompressFormat.JPEG, 75, fos)
+                scaledBitmap!!.compress(Bitmap.CompressFormat.JPEG, 100, fos)
                 fos.flush()
                 fos.close()
             } catch (e: FileNotFoundException) {
