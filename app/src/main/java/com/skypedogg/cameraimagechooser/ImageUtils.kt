@@ -1,12 +1,12 @@
 package com.skypedogg.cameraimagechooser
 
+import android.R.attr.bitmap
 import android.graphics.*
 import android.net.Uri
-import android.os.Environment
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -33,6 +33,25 @@ class ImageUtils {
         return null
     }
 
+    fun getBitmapFromPath(absolutePath: String): Bitmap {
+        return BitmapFactory.decodeFile(absolutePath)
+    }
+
+    fun getBitmapFromFile(file: File): Bitmap {
+        return BitmapFactory.decodeFile(file.absolutePath)
+    }
+
+    fun File.compressImage(size: Int): File {
+        val outputStream = ByteArrayOutputStream()
+        val originalSize = this.length()
+        val bitmap = getBitmapFromFile(this)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 95, outputStream)
+        this.writeBytes(outputStream.toByteArray())
+        if (this.length() > originalSize)
+            this.compressImage(size)
+        return this
+    }
+
     fun scaleImage(path: String, dstWidth: Int, dstHeight: Int, scaleType: ScaleType, outputDir: String): String {
         var strMyImagePath: String? = null
         var scaledBitmap: Bitmap? = null
@@ -44,10 +63,10 @@ class ImageUtils {
                 if (!(unscaledBitmap.width <= dstWidth && unscaledBitmap.height <= dstHeight)) {
                     // Part 2: Scale image
                     createScaledBitmap(
-                        unscaledBitmap,
-                        dstWidth,
-                        dstHeight,
-                        ScaleType.FIT
+                            unscaledBitmap,
+                            dstWidth,
+                            dstHeight,
+                            ScaleType.FIT
                     )
                 } else {
                     unscaledBitmap.recycle()
@@ -79,18 +98,18 @@ class ImageUtils {
 
 
     private fun decodeFile(
-        path: String,
-        dstWidth: Int,
-        dstHeight: Int,
-        scaleType: ScaleType
+            path: String,
+            dstWidth: Int,
+            dstHeight: Int,
+            scaleType: ScaleType
     ): Bitmap {
         val options = BitmapFactory.Options()
         options.inJustDecodeBounds = true
         BitmapFactory.decodeFile(path, options)
         options.inJustDecodeBounds = false
         options.inSampleSize = calculateSampleSize(
-            options.outWidth, options.outHeight, dstWidth,
-            dstHeight, scaleType
+                options.outWidth, options.outHeight, dstWidth,
+                dstHeight, scaleType
         )
         return BitmapFactory.decodeFile(path, options)
     }
@@ -104,20 +123,20 @@ class ImageUtils {
      * @param scaleType Type of image scaling
      */
     private fun createScaledBitmap(
-        unscaledBitmap: Bitmap, dstWidth: Int, dstHeight: Int,
-        scaleType: ScaleType
+            unscaledBitmap: Bitmap, dstWidth: Int, dstHeight: Int,
+            scaleType: ScaleType
     ): Bitmap? {
         val srcRect: Rect = calculateSrcRect(
-            unscaledBitmap.width, unscaledBitmap.height,
-            dstWidth, dstHeight, scaleType
+                unscaledBitmap.width, unscaledBitmap.height,
+                dstWidth, dstHeight, scaleType
         )
         val dstRect: Rect = calculateDstRect(
-            unscaledBitmap.width, unscaledBitmap.height,
-            dstWidth, dstHeight, scaleType
+                unscaledBitmap.width, unscaledBitmap.height,
+                dstWidth, dstHeight, scaleType
         )
         val scaledBitmap = Bitmap.createBitmap(
-            dstRect.width(), dstRect.height(),
-            Bitmap.Config.ARGB_8888
+                dstRect.width(), dstRect.height(),
+                Bitmap.Config.ARGB_8888
         )
         val canvas = Canvas(scaledBitmap)
         canvas.drawBitmap(unscaledBitmap, srcRect, dstRect, Paint(Paint.FILTER_BITMAP_FLAG))
@@ -135,8 +154,8 @@ class ImageUtils {
      * @return Optimal source rectangle
      */
     private fun calculateSrcRect(
-        srcWidth: Int, srcHeight: Int, dstWidth: Int, dstHeight: Int,
-        scaleType: ScaleType
+            srcWidth: Int, srcHeight: Int, dstWidth: Int, dstHeight: Int,
+            scaleType: ScaleType
     ): Rect {
         return if (scaleType === ScaleType.CROP) {
             val srcAspect = srcWidth.toFloat() / srcHeight.toFloat()
@@ -166,11 +185,11 @@ class ImageUtils {
      * @return Optimal destination rectangle
      */
     private fun calculateDstRect(
-        srcWidth: Int,
-        srcHeight: Int,
-        dstWidth: Int,
-        dstHeight: Int,
-        scaleType: ScaleType
+            srcWidth: Int,
+            srcHeight: Int,
+            dstWidth: Int,
+            dstHeight: Int,
+            scaleType: ScaleType
     ): Rect {
         return if (scaleType === ScaleType.FIT) {
             val srcAspect = srcWidth.toFloat() / srcHeight.toFloat()
@@ -194,11 +213,11 @@ class ImageUtils {
      * @return Optimal down scaling sample size for decoding
      */
     private fun calculateSampleSize(
-        srcWidth: Int,
-        srcHeight: Int,
-        dstWidth: Int,
-        dstHeight: Int,
-        scaleType: ScaleType
+            srcWidth: Int,
+            srcHeight: Int,
+            dstWidth: Int,
+            dstHeight: Int,
+            scaleType: ScaleType
     ): Int {
         return if (scaleType === ScaleType.FIT) {
             val srcAspect = srcWidth.toFloat() / srcHeight.toFloat()
