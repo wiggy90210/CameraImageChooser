@@ -65,10 +65,9 @@ class ImageActivity : AppCompatActivity() {
         if (requestCode == GALLERY_INTENT) {
             if (resultCode == RESULT_OK) {
                 binding.imageView.setImageURI(data?.data)
-                imagePath = imageUtils.getPathFromUri(data?.data)
+                imagePath = imageUtils.getAbsolutePathFromUri(this@ImageActivity, data?.data)
                 imageFile = imageUtils.getFileFromUri(data?.data)
 
-                galleryAddPic(imagePath!!)
             } else {
                 val i = Intent(this@ImageActivity, MainActivity::class.java)
                 i.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP

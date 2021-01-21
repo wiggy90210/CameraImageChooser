@@ -1,8 +1,10 @@
 package com.skypedogg.cameraimagechooser
 
-import android.R.attr.bitmap
+import android.content.Context
+import android.database.Cursor
 import android.graphics.*
 import android.net.Uri
+import android.provider.MediaStore
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileNotFoundException
@@ -19,10 +21,26 @@ class ImageUtils {
 
     fun getPathFromUri(uri: Uri?): String? = uri?.path
 
+    fun getAbsolutePathFromUri(context: Context, uri: Uri?): String? = uri?.let { getAbsolutePathFromURI(context, it) }
+
     fun getBitmapFromPath(absolutePath: String): Bitmap = BitmapFactory.decodeFile(absolutePath)
 
     fun getBitmapFromFile(file: File): Bitmap = BitmapFactory.decodeFile(file.absolutePath)
-    
+
+    private fun getAbsolutePathFromURI(context: Context, contentURI: Uri): String? {
+        var absolutePath: String? = null
+        val filePathColumn = arrayOf(MediaStore.Images.Media.DATA)
+        val cursor: Cursor? = context.contentResolver.query(contentURI, filePathColumn, null, null, null)
+        cursor?.let {
+            if (it.moveToFirst()) {
+                val columnIndex = it.getColumnIndex(filePathColumn[0])
+                absolutePath = it.getString(columnIndex)
+            }
+            it.close()
+        }
+        return absolutePath
+    }
+
 
     fun File.compressImage(size: Int): File {
         val outputStream = ByteArrayOutputStream()
@@ -57,15 +75,15 @@ class ImageUtils {
                 }
             val mFolder = File(outputDir)
             if (!mFolder.exists()) {
-                mFolder.mkdirs()
+                mFolder.mkdir()
             }
-            val fileName = "Scaled_${SimpleDateFormat(FILENAME_FORMAT, Locale.getDefault()).format(System.currentTimeMillis())}.png"
+            val fileName = "Scaled_${SimpleDateFormat(FILENAME_FORMAT, Locale.getDefault()).format(System.currentTimeMillis())}.jpg"
             val file = File(mFolder.absolutePath, fileName)
             strMyImagePath = file.absolutePath
             var fos: FileOutputStream? = null
             try {
                 fos = FileOutputStream(file)
-                scaledBitmap!!.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+                scaledBitmap!!.compress(Bitmap.CompressFormat.JPEG, 75, fos)
                 fos.flush()
                 fos.close()
             } catch (e: FileNotFoundException) {
@@ -75,12 +93,13 @@ class ImageUtils {
             }
             scaledBitmap!!.recycle()
         } catch (e: Throwable) {
+            e.printStackTrace()
         }
         return strMyImagePath ?: path
     }
 
 
-    fun decodeFile(
+    private fun decodeFile(
             path: String,
             dstWidth: Int,
             dstHeight: Int,
