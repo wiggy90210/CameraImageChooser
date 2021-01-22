@@ -58,7 +58,9 @@ class MainActivity : AppCompatActivity() {
         // Create an image file name
         val timeStamp: String = SimpleDateFormat(FILENAME_FORMAT, Locale.getDefault())
             .format(System.currentTimeMillis()) + ".bmp"
-        val dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val externalStorageVolumes: Array<out File> =
+                ContextCompat.getExternalFilesDirs(applicationContext, null)
+        val dir = externalStorageVolumes[0]
         return File.createTempFile(
             "Photo_${timeStamp}_",
             ".jpg",
@@ -81,11 +83,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 // Continue only if the File was successfully created
                 photoFile?.also {
-                    val photoURI: Uri = FileProvider.getUriForFile(
-                        this,
-                        "com.example.android.fileprovider",
-                        it
-                    )
+                    val photoURI: Uri = Uri.fromFile(it)
                     takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
                     startActivityForResult(takePictureIntent, PHOTO_TAKEN_CODE)
                 }
