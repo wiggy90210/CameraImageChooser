@@ -42,14 +42,14 @@ class ImageUtils {
     }
 
 
-    fun File.compressImage(size: Int): File {
+    fun File.compressImage(size: Double): File {
         val outputStream = ByteArrayOutputStream()
-        val originalSize = this.length()
+        val givenSize: Long = (size * 1024 * 1024).toLong()
         val bitmap = getBitmapFromFile(this)
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 95, outputStream)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
         this.writeBytes(outputStream.toByteArray())
-        if (this.length() > originalSize)
-            this.compressImage(size)
+        if (this.length() > givenSize)
+            return this.compressImage(size)
         return this
     }
 
